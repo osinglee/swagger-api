@@ -1,0 +1,28 @@
+{
+  "name": "swaggertocode",
+  "version": "0.0.1",
+  "description": "swagger to code",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "task": "npm run fetch && npm run build && npm run clean ",
+    "fetch": "gulp generateFetch --gulpfile gulpfile.ts",
+    "build": "gulp generateBuild --gulpfile gulpfile.ts",
+    "clean": "npx del-cli -f src/**"
+  },
+  "main": "./dist/index.js",
+  "typings": "./lib/index.d.ts",
+  "author": "mdd6691@gmail.com",
+  "license": "LICENSE",
+  "devDependencies": {},
+  "dependencies": {
+    "@types/gulp": "^4.0.5",
+    "@types/node": "^9.4.0",
+    "@types/node-fetch": "^2.5.4",
+    "gulp": "^4.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "gulpclass": "^0.2.0",
+    "node-fetch": "^2.6.0",
+    "ts-node": "^8.5.4",
+    "typescript": "^2.8.3"
+  }
+}
