@@ -86,26 +86,26 @@ export class GenerateRestfulApi {
     let list: string = '';
     def.forEach((k: any) => {
       let attr: string = '';
-      let anys = false;
+      let flag = false;
       Object.keys(k.value).forEach(s => {
         if (k.value[s].type === 'object') {
-          anys = true;
+          flag = true;
           attr += `  ${s}?: T;\n`
         } else if (k.value[s].type === 'array') {
           if (k.value[s].items.type) {
             attr += `  ${s}?: ${this.types[k.value[s].type] || k.value[s].type};\n`
           } else {
-            const ref = k.value[s].items.$ref.split('/');
+            const ref = (k.value[s].items.$ref as string).split('/');
             attr += `  ${s}?: ${ref[ref.length - 1]}[];\n`
           }
         } else if (k.value[s].type) {
           attr += `  ${s}?: ${this.types[k.value[s].type] || k.value[s].type};\n`
         } else {
-          const ref = k.value[s].$ref.split('/');
+          const ref = (k.value[s].$ref as string).split('/');
           attr += `  ${s}?: ${ref[ref.length - 1]};\n`
         }
       });
-      list += `export interface ${k.name} ${anys ? '<T = any>' : ''}{
+      list += `export interface ${k.name} ${flag ? '<T = any>' : ''}{
 ${attr}}\n\n`
     });
     fs.writeFileSync(path.join(__dirname, '/src/entity.ts'), list);
@@ -168,24 +168,24 @@ ${attr}}\n\n`
         dto.push(postParam);
       } else {
         params = 'body';
-        if (k.parameters[0].schema) {
-          const p = k.parameters[0].schema['$ref'].split('/');
+        if (k.parameters && k.parameters[0].schema) {
+          const p = (k.parameters[0].schema['$ref'] as string).split('/');
           postParam = p[p.length - 1]
         } else {
           postParam = 'any';
         }
         entity.push(postParam)
       }
-      const ref = k.responses200.split('/');
+      const ref = (k.responses200 as string).split('/');
       let rt = `<${ref[ref.length - 1].replace(/«/g, '<').replace(/»/g, '>')}>`;
-      if (/List/.test(rt)) {
+      if (/<List/.test(rt)) {
         rt = rt.replace(/List<(\w+)>/, (a: string, b: string) => {
           entity.push(b);
           return b + '[]'
         });
       } else {
-        const rtsp = rt.split('<');
-        rtsp.filter(v => !!v).forEach(v => {
+        const rtSp = rt.split('<');
+        rtSp.filter(v => !!v).forEach(v => {
           entity.push(v.replace(/>/g, ''))
         });
       }
@@ -197,7 +197,6 @@ ${attr}}\n\n`
         .replace(/\/({\w+})/g, '')
         .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
         .replace(/\//g, '')
-        // tslint:disable-next-line:prefer-template
         }(${params}: ${postParam}): Promise${rt}{
     return server.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
     });

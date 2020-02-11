@@ -32,7 +32,7 @@ export class Gulpfile {
   @Task()
   async generateFetch() {
     return Promise.all([
-      new GenerateRestfulApi({baseUrl: 'http://localhost:8080/v2/api-docs'}).taskStart(),
+      new GenerateRestfulApi({baseUrl: 'http://dts.dev.cn-su.net/service/v2/api-docs'}).taskStart(),
     ]).catch((err) => {
       console.log("连接服务器出错", err);
     });
