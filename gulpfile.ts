@@ -11,9 +11,9 @@ export class Gulpfile {
   @Task()
   generateBuild() {
     return gulp.src([
-      'src/index.ts',
-      'src/dto.ts',
-      'src/entity.ts',
+      'dist/lib/api.ts',
+      'dist/lib/dto.ts',
+      'dist/lib/entity.ts',
     ]).pipe(ts({
       declaration: true,
       'target': 'es5',
@@ -25,14 +25,14 @@ export class Gulpfile {
       'noResolve': false
     })).pipe(gulp.dest((file: any) => {
       if (file.relative.endsWith('.d.ts')) return 'lib';
-      return 'dist'
+      return 'dist/js'
     }))
   }
 
   @Task()
   async generateFetch() {
     return Promise.all([
-      new GenerateRestfulApi({baseUrl: 'http://dts.dev.cn-su.net/service/v2/api-docs'}).taskStart(),
+      new GenerateRestfulApi({baseUrl: 'http://localhost:8080/v2/api-docs'}).taskStart(),
     ]).catch((err) => {
       console.log("连接服务器出错", err);
     });

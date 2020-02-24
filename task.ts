@@ -108,7 +108,7 @@ export class GenerateRestfulApi {
       list += `export interface ${k.name} ${flag ? '<T = any>' : ''}{
 ${attr}}\n\n`
     });
-    fs.writeFileSync(path.join(__dirname, '/src/entity.ts'), list);
+    fs.writeFileSync(path.join(__dirname, '/dist/lib/entity.ts'), list);
   }
 
   /**
@@ -119,17 +119,19 @@ ${attr}}\n\n`
     const def: any[] = [];
     Object.keys(this.path).forEach((v: any) => {
       Object.keys(this.path[v]).forEach((s: any) => {
-        def.push({
-          methods: s,
-          path: v,
-          parameters: this.path[v][s].parameters,
-          operationId: this.path[v][s].operationId
-            .replace(/([a-z])/, (_a: string, b: string) => b.toLocaleUpperCase())
-            .replace(/_/, ''),
-          responses200: this.path[v][s].responses['200'].schema['$ref'],
-          summary: this.path[v][s].summary,
-
-        })
+        const rs = this.path[v][s].responses['200'].schema['$ref'];
+        if (!!rs) {
+          def.push({
+            methods: s,
+            path: v,
+            parameters: this.path[v][s].parameters,
+            operationId: this.path[v][s].operationId
+              .replace(/([a-z])/, (_a: string, b: string) => b.toLocaleUpperCase())
+              .replace(/_/, ''),
+            responses200: rs,
+            summary: this.path[v][s].summary,
+          })
+        }
       });
     });
 
@@ -147,7 +149,7 @@ ${attr}}\n\n`
 ${attr}}\n\n`
       }
     });
-    fs.writeFileSync(path.join(__dirname, '/src/dto.ts'), list);
+    fs.writeFileSync(path.join(__dirname, '/dist/lib/dto.ts'), list);
   }
 
   /**
@@ -198,7 +200,7 @@ ${attr}}\n\n`
         .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
         .replace(/\//g, '')
         }(${params}: ${postParam}): Promise${rt}{
-    return server.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
+    return oanServer.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
     });
 
     let obj: any = {};
@@ -208,7 +210,7 @@ ${attr}}\n\n`
     entity = Object.keys(obj);
 
     const className = `// @ts-ignore
-import server from './server'
+import {oanServer} from '@/tools/servers'
 import {${entity.join(',\n    ')} \n} from "./entity"\n
 import {${dto.join(',\n    ')} \n} from "./dto"
 \n
@@ -218,6 +220,6 @@ import {${dto.join(',\n    ')} \n} from "./dto"
  * ${new Date()}
  */
 export class ServersApi {\n${list}}\n`;
-    fs.writeFileSync(path.join(__dirname, 'src/index.ts'), className);
+    fs.writeFileSync(path.join(__dirname, '/dist/lib/api.ts'), className);
   }
 }
