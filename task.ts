@@ -53,7 +53,8 @@ export class GenerateRestfulApi {
       'int': 'number',
       'array': 'any[]',
       'object': 'any',
-      'boolean': 'boolean'
+      'boolean': 'boolean',
+      'file': 'any'
     }
   }
 
@@ -172,11 +173,17 @@ ${attr}}\n\n`
         params = 'body';
         if (k.parameters && k.parameters[0].schema) {
           const p = (k.parameters[0].schema['$ref'] as string).split('/');
-          postParam = p[p.length - 1]
+          postParam = p[p.length - 1];
+          entity.push(postParam)
         } else {
-          postParam = 'any';
+          let queryParam: any[] = [];
+          k.parameters.forEach((v: any) => {
+            if (v.name !== 'token') {
+              queryParam.push(`${v.name}?: ${this.types[v.type]}`);
+            }
+          });
+          postParam = `{${queryParam.join(', ')}}`;
         }
-        entity.push(postParam)
       }
       const ref = (k.responses200 as string).split('/');
       let rt = `<${ref[ref.length - 1].replace(/«/g, '<').replace(/»/g, '>')}>`;
