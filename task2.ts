@@ -1,6 +1,7 @@
 import fetch, {Response} from 'node-fetch';
 import * as fs from "fs";
 import * as path from 'path';
+import {any} from "expect";
 
 export interface GenerateRestfulApiProps {
   baseUrl: string;
@@ -45,6 +46,8 @@ export class GenerateRestfulApi {
 
   private api!: any[];
 
+  private entity!: any[];
+
   constructor(props: GenerateRestfulApiProps) {
     this.baseUrl = props.baseUrl;
     this.types = {
@@ -53,7 +56,8 @@ export class GenerateRestfulApi {
       'int': 'number',
       'array': 'any[]',
       'object': 'any',
-      'boolean': 'boolean'
+      'boolean': 'boolean',
+      'file': 'any'
     }
   }
 
@@ -108,6 +112,7 @@ export class GenerateRestfulApi {
       list += `export interface ${k.name} ${flag ? '<T = any>' : ''}{
 ${attr}}\n\n`
     });
+    this.entity = def;
     fs.writeFileSync(path.join(__dirname, 'lib/entity.ts'), list);
   }
 
@@ -139,7 +144,6 @@ ${attr}}\n\n`
     this.api = def;
     def.forEach((k: any) => {
       let attr: string = '';
-      // console.log(typeof k.parameters);
       (k.parameters || []).forEach((s: any) => {
         attr += `  ${s.name}${s.required ? '?' : ''}: ${this.types[s.type] || s.type};\n`
       });
@@ -159,24 +163,41 @@ ${attr}}\n\n`
   private genApi() {
     let list: string = '';
     let entity: string[] = [];
-    let dto: string[] = [];
 
     this.api.forEach((k: any) => {
-      let params = '';
-      let postParam = '';
-      if (['get', 'header'].indexOf(k.methods) >= 0) {
-        params = 'query';
-        postParam = k.operationId;
-        dto.push(postParam);
+      let queryParam: any[] = [];
+      let queryParamKey: any[] = [];
+
+      if (['get', 'header'].includes(k.methods)) {
+        k.parameters.forEach((v: any) => {
+          if (v.name !== 'token') {
+            queryParam.push(`${v.name}?: ${this.types[v.type]}`);
+            queryParamKey.push(v.name);
+          }
+        });
       } else {
-        params = 'body';
         if (k.parameters && k.parameters[0].schema) {
           const p = (k.parameters[0].schema['$ref'] as string).split('/');
-          postParam = p[p.length - 1]
+          const key = p[p.length - 1];
+          Object.keys(this.definitions).forEach((v: any) => {
+            let thisKey = this.definitions[v];
+            if (key === v) {
+              Object.keys(thisKey.properties).forEach(s => {
+                if (s !== 'token') {
+                  queryParam.push(`${s}?: ${this.types[thisKey.properties[s].type]}`);
+                  queryParamKey.push(s);
+                }
+              });
+            }
+          });
         } else {
-          postParam = 'any';
+          k.parameters.forEach((v: any) => {
+            if (v.name !== 'token') {
+              queryParam.push(`${v.name}?: ${this.types[v.type]}`);
+              queryParamKey.push(v.name);
+            }
+          });
         }
-        entity.push(postParam)
       }
       const ref = (k.responses200 as string).split('/');
       let rt = `<${ref[ref.length - 1].replace(/«/g, '<').replace(/»/g, '>')}>`;
@@ -199,8 +220,8 @@ ${attr}}\n\n`
         .replace(/\/({\w+})/g, '')
         .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
         .replace(/\//g, '')
-        }(${params}: ${postParam}): Promise${rt}{
-    return oanServer.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
+        }(${queryParam.join(', ')}): Promise${rt} {
+    return oanServer.connection('${k.methods}', '${k.path}', {${queryParamKey.join(', ')}})\n  }\n\n`
     });
 
     let obj: any = {};
@@ -212,7 +233,6 @@ ${attr}}\n\n`
     const className = `// @ts-ignore
 import {oanServer} from '@/tools/servers'
 import {${entity.join(',\n    ')} \n} from "./entity"\n
-import {${dto.join(',\n    ')} \n} from "./dto"
 \n
 /**
  * ${this.info.title}

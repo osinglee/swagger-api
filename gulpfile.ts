@@ -11,9 +11,9 @@ export class Gulpfile {
   @Task()
   generateBuild() {
     return gulp.src([
-      'dist/lib/api.ts',
-      'dist/lib/dto.ts',
-      'dist/lib/entity.ts',
+      'lib/api.ts',
+      'lib/dto.ts',
+      'lib/entity.ts',
     ]).pipe(ts({
       declaration: true,
       'target': 'es5',
@@ -24,7 +24,6 @@ export class Gulpfile {
       lib: ['es2017', 'dom'],
       'noResolve': false
     })).pipe(gulp.dest((file: any) => {
-      if (file.relative.endsWith('.d.ts')) return 'lib';
       return 'dist/js'
     }))
   }
