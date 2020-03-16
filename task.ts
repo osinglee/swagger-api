@@ -88,7 +88,7 @@ export class GenerateRestfulApi {
     def.forEach((k: any) => {
       let attr: string = '';
       let flag = false;
-      Object.keys(k.value).forEach(s => {
+      k.value && Object.keys(k.value).forEach(s => {
         if (k.value[s].type === 'object') {
           flag = true;
           attr += `  ${s}?: T;\n`
