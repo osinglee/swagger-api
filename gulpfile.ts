@@ -11,7 +11,7 @@ export class Gulpfile {
   @Task()
   generateBuild() {
     return gulp.src([
-      'lib/api.ts',
+      'lib/index.ts',
       'lib/dto.ts',
       'lib/entity.ts',
     ]).pipe(ts({
@@ -31,7 +31,7 @@ export class Gulpfile {
   @Task()
   async generateFetch() {
     return Promise.all([
-      new GenerateRestfulApi({baseUrl: 'http://localhost:8080/v2/api-docs'}).taskStart(),
+      new GenerateRestfulApi({baseUrl: 'http://localhost:8090/v2/api-docs'}).taskStart(),
     ]).catch((err) => {
       console.log("连接服务器出错", err);
     });

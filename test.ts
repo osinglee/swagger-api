@@ -1,9 +1,9 @@
-import {ServersApi} from "./src";
-import {JSONResult} from "./src/entity";
+import {ServersApi} from "./dist/js";
+import {JSONResult} from "./dist/js/entity";
 
-ServersApi.ApiAuthLogin({
-  user: 'caozuogong',
-  password: 'caozuogong'
+ServersApi.OAN0001A02({
+  id: 1,
+  token: 'caozuogong'
 }).then((res: JSONResult) => {
   if (res.success) {
     console.log(res.data);

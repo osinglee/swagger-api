@@ -131,6 +131,7 @@ ${attr}}\n\n`
               .replace(/_/, ''),
             responses200: rs,
             summary: this.path[v][s].summary,
+            description: this.path[v][s].description,
           })
         }
       });
@@ -200,6 +201,7 @@ ${attr}}\n\n`
       }
       list += `  /**
    * ${k.summary}
+   * ${k.description}
    */
   static ${k.path
         .replace(/\/([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
@@ -227,6 +229,6 @@ import {${dto.join(',\n    ')} \n} from "./dto"
  * ${new Date()}
  */
 export class ServersApi {\n${list}}\n`;
-    fs.writeFileSync(path.join(__dirname, 'lib/api.ts'), className);
+    fs.writeFileSync(path.join(__dirname, 'lib/index.ts'), className);
   }
 }
