@@ -209,7 +209,7 @@ ${attr}}\n\n`
         .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
         .replace(/\//g, '')
         }(${params}: ${postParam}): Promise${rt}{
-    return oanServer.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
+    return services.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
     });
 
     let obj: any = {};
@@ -219,7 +219,7 @@ ${attr}}\n\n`
     entity = Object.keys(obj);
 
     const className = `// @ts-ignore
-import {oanServer} from '@/tools/servers'
+import services from '../../server'
 import {${entity.join(',\n    ')} \n} from "./entity"\n
 import {${dto.join(',\n    ')} \n} from "./dto"
 \n
