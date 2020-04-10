@@ -186,7 +186,7 @@ ${attr}}\n\n`
           postParam = `{${queryParam.join(', ')}}`;
         }
       }
-      const ref = (k.responses200 as string).split('/');
+      let ref = (k.responses200 as string).split('/');
       let rt = `<${ref[ref.length - 1].replace(/«/g, '<').replace(/»/g, '>')}>`;
       if (/<List/.test(rt)) {
         rt = rt.replace(/List<(\w+)>/, (a: string, b: string) => {
@@ -208,7 +208,7 @@ ${attr}}\n\n`
         .replace(/\/({\w+})/g, '')
         .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
         .replace(/\//g, '')
-        }(${params}: ${postParam}): Promise${rt}{
+        }(${params}?: ${postParam}): Promise${rt}{
     return services.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
     });
 
