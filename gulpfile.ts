@@ -1,6 +1,7 @@
-import {Gulpclass, Task} from 'gulpclass/Decorators'
+import {Gulpclass, SequenceTask, Task} from 'gulpclass/Decorators'
 import * as gulp from 'gulp'
 import {GenerateRestfulApi} from "./task";
+import del = require("del");
 
 const ts = require('gulp-typescript');
 
@@ -35,5 +36,17 @@ export class Gulpfile {
     ]).catch((err) => {
       console.log("连接服务器出错", err);
     });
+  }
+
+  @Task() // or use provided callback instead
+  clean() {
+    return del([
+      './lib',
+    ]);
+  }
+
+  @SequenceTask() // this special annotation using "run-sequence" module to run returned tasks in sequence
+  build() {
+    return ["generateFetch", "generateBuild", "clean"];
   }
 }

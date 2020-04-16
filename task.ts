@@ -62,6 +62,9 @@ export class GenerateRestfulApi {
     return new Promise(async (resolve, reject) => {
       fetch(this.baseUrl).then((res: Response) => res.json()).then((json: ResponseData) => {
         [this.info, this.path, this.definitions] = [json.info, json.paths, json.definitions];
+        if (!fs.existsSync(path.join(__dirname, 'lib'))) {
+          fs.mkdirSync(path.join(__dirname, 'lib'));
+        }
         this.genEntity();
         this.genDto();
         this.genApi();
@@ -79,10 +82,13 @@ export class GenerateRestfulApi {
   private genEntity() {
     const def: any[] = [];
     Object.keys(this.definitions).forEach((v: any) => {
-      def.push({
-        name: this.definitions[v].title.replace(/[«»]/g, ''),
-        value: this.definitions[v].properties
-      })
+      const type: string = this.definitions[v].title.replace(/[«»]/g, '');
+      if (!Object.keys(this.types).includes(type)) {
+        def.push({
+          name: this.definitions[v].title.replace(/[«»]/g, ''),
+          value: this.definitions[v].properties
+        })
+      }
     });
     let list: string = '';
     def.forEach((k: any) => {
@@ -127,8 +133,8 @@ ${attr}}\n\n`
             path: v,
             parameters: this.path[v][s].parameters,
             operationId: this.path[v][s].operationId
-              .replace(/([a-z])/, (_a: string, b: string) => b.toLocaleUpperCase())
-              .replace(/_/, ''),
+                .replace(/([a-z])/, (_a: string, b: string) => b.toLocaleUpperCase())
+                .replace(/_/, ''),
             responses200: rs,
             summary: this.path[v][s].summary,
             description: this.path[v][s].description,
@@ -147,7 +153,7 @@ ${attr}}\n\n`
       });
       if (['get', 'header'].indexOf(k.methods) >= 0) {
         list += `export interface ${k.operationId
-          } {
+        } {
 ${attr}}\n\n`
       }
     });
@@ -164,8 +170,8 @@ ${attr}}\n\n`
     let dto: string[] = [];
 
     this.api.forEach((k: any) => {
-      let params = '';
-      let postParam = '';
+      let params: string;
+      let postParam: string = '';
       if (['get', 'header'].indexOf(k.methods) >= 0) {
         params = 'query';
         postParam = k.operationId;
@@ -173,9 +179,15 @@ ${attr}}\n\n`
       } else {
         params = 'body';
         if (k.parameters && k.parameters[0].schema) {
-          const p = (k.parameters[0].schema['$ref'] as string).split('/');
-          postParam = p[p.length - 1];
-          entity.push(postParam)
+          if (k.parameters[0].schema['$ref']) {
+            const p = (k.parameters[0].schema['$ref'] as string).split('/');
+            postParam = p[p.length - 1];
+            entity.push(postParam)
+          } else if (k.parameters[0].schema.items) {
+            // const p = (k.parameters[0].schema['$ref'].items as string).split('/');
+            // postParam = p[p.length - 1];
+            // entity.push(postParam)
+          }
         } else {
           let queryParam: any[] = [];
           k.parameters.forEach((v: any) => {
@@ -186,9 +198,20 @@ ${attr}}\n\n`
           postParam = `{${queryParam.join(', ')}}`;
         }
       }
+      postParam = postParam || 'any';
       let ref = (k.responses200 as string).split('/');
       let rt = `<${ref[ref.length - 1].replace(/«/g, '<').replace(/»/g, '>')}>`;
-      if (/<List/.test(rt)) {
+      if (/<JSONResult<(\w+)>>/.test(rt)) {
+        rt = rt.replace(/<JSONResult<(\w+)>>/, (a: string, b: string) => {
+          if (Object.keys(this.types).includes(b)) {
+            return this.types[b]
+          } else {
+            entity.push(b);
+            return b;
+          }
+        })
+        rt = `<JSONResult<${rt}>>`
+      } else if (/<List/.test(rt)) {
         rt = rt.replace(/List<(\w+)>/, (a: string, b: string) => {
           entity.push(b);
           return b + '[]'
@@ -199,16 +222,17 @@ ${attr}}\n\n`
           entity.push(v.replace(/>/g, ''))
         });
       }
+
       list += `  /**
    * ${k.summary}
    * ${k.description}
    */
   static ${k.path
-        .replace(/\/([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
-        .replace(/\/({\w+})/g, '')
-        .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
-        .replace(/\//g, '')
-        }(${params}?: ${postParam}): Promise${rt}{
+          .replace(/\/([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
+          .replace(/\/({\w+})/g, '')
+          .replace(/_([a-z])/g, (_a: any, b: string) => b.toLocaleUpperCase())
+          .replace(/\//g, '')
+      }(${params}?: ${postParam}): Promise${rt}{
     return services.connection('${k.methods}', '${k.path}', ${params})\n  }\n\n`
     });
 
@@ -222,6 +246,7 @@ ${attr}}\n\n`
 import services from '../../server'
 import {${entity.join(',\n    ')} \n} from "./entity"\n
 import {${dto.join(',\n    ')} \n} from "./dto"
+\n
 \n
 /**
  * ${this.info.title}
